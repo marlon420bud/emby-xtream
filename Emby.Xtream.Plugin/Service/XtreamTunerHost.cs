@@ -147,7 +147,9 @@ namespace Emby.Xtream.Plugin.Service
             // Return cached channels if available and not expired
             if (_cachedChannels != null && DateTime.UtcNow - _cacheTime < CacheDuration)
             {
-                Logger.Debug("Returning cached channel list ({0} channels)", _cachedChannels.Count);
+                var cachedGracenote = _cachedChannels.Count(c => c.ListingsChannelId != null);
+                Logger.Debug("Returning cached channel list ({0} channels, {1} with Gracenote station ID)",
+                    _cachedChannels.Count, cachedGracenote);
                 return _cachedChannels;
             }
 
@@ -255,8 +257,9 @@ namespace Emby.Xtream.Plugin.Service
             _streamStats = newStats;
             _cachedChannels = result;
             _cacheTime = DateTime.UtcNow;
-            Logger.Info("Channel list cached with {0} channels ({1} with stream stats)",
-                result.Count, statsCount);
+            var gracenoteCount = result.Count(c => c.ListingsChannelId != null);
+            Logger.Info("Channel list cached with {0} channels ({1} with stream stats, {2} with Gracenote station ID)",
+                result.Count, statsCount, gracenoteCount);
 
             return result;
         }
