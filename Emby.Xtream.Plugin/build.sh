@@ -12,13 +12,13 @@ DLL_NAME="Emby.Xtream.Plugin.dll"
 GIT_DESC=$(git -C "$SCRIPT_DIR" describe --tags 2>/dev/null || echo "")
 if [ -z "$GIT_DESC" ]; then
     VERSION="0.0.1"
-elif echo "$GIT_DESC" | grep -q '-'; then
-    # v1.2.0-3-gabcdef -> base=1.2.0, commits=3 -> 1.2.0.3
-    BASE=$(echo "$GIT_DESC" | sed 's/^v//' | cut -d'-' -f1)
-    COMMITS=$(echo "$GIT_DESC" | cut -d'-' -f2)
+elif echo "$GIT_DESC" | grep -qE -- '-[0-9]+-g[0-9a-f]+$'; then
+    # N commits after a tag: v1.2.0-3-gabcdef -> 1.2.0.3
+    BASE=$(echo "$GIT_DESC" | sed 's/^v//' | sed 's/-[0-9]*-g[0-9a-f]*$//')
+    COMMITS=$(echo "$GIT_DESC" | grep -oE -- '-[0-9]+-g[0-9a-f]+$' | cut -d'-' -f2)
     VERSION="${BASE}.${COMMITS}"
 else
-    # Exactly on tag: v1.2.0 -> 1.2.0
+    # Exactly on tag (stable or pre-release): v1.2.0 -> 1.2.0, v1.2.0-beta.1 -> 1.2.0-beta.1
     VERSION="${GIT_DESC#v}"
 fi
 

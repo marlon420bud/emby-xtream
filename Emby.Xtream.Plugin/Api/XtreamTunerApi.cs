@@ -250,11 +250,17 @@ namespace Emby.Xtream.Plugin.Api
 
         public async Task<object> Get(GetLiveCategories request)
         {
+            var config = Plugin.Instance?.Configuration;
+            if (config == null || string.IsNullOrEmpty(config.BaseUrl) ||
+                string.IsNullOrEmpty(config.Username) || string.IsNullOrEmpty(config.Password))
+            {
+                return new List<Category>();
+            }
+
             var liveTvService = Plugin.Instance.LiveTvService;
             var categories = await liveTvService.GetLiveCategoriesAsync(CancellationToken.None).ConfigureAwait(false);
 
             // Cache for instant UI loading
-            var config = Plugin.Instance.Configuration;
             config.CachedLiveCategories = System.Text.Json.JsonSerializer.Serialize(
                     categories.Select(c => new { c.CategoryId, c.CategoryName }).ToList());
             Plugin.Instance.SaveConfiguration();
@@ -264,7 +270,13 @@ namespace Emby.Xtream.Plugin.Api
 
         public async Task<object> Get(GetVodCategories request)
         {
-            var config = Plugin.Instance.Configuration;
+            var config = Plugin.Instance?.Configuration;
+            if (config == null || string.IsNullOrEmpty(config.BaseUrl) ||
+                string.IsNullOrEmpty(config.Username) || string.IsNullOrEmpty(config.Password))
+            {
+                return new List<Category>();
+            }
+
             var url = string.Format(
                 System.Globalization.CultureInfo.InvariantCulture,
                 "{0}/player_api.php?username={1}&password={2}&action=get_vod_categories",
@@ -292,7 +304,13 @@ namespace Emby.Xtream.Plugin.Api
 
         public async Task<object> Get(GetSeriesCategories request)
         {
-            var config = Plugin.Instance.Configuration;
+            var config = Plugin.Instance?.Configuration;
+            if (config == null || string.IsNullOrEmpty(config.BaseUrl) ||
+                string.IsNullOrEmpty(config.Username) || string.IsNullOrEmpty(config.Password))
+            {
+                return new List<Category>();
+            }
+
             var jsonOptions = new System.Text.Json.JsonSerializerOptions
             {
                 NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,

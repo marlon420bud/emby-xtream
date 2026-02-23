@@ -153,37 +153,42 @@ namespace Emby.Xtream.Plugin.Service
 
             Logger.Info("Fetching channels from Xtream API");
 
-            // Use LiveTvService for filtered channels (category filtering + overrides)
             var liveTvService = Plugin.Instance.LiveTvService;
-            List<Client.Models.LiveStreamInfo> channels;
-            try
-            {
-                channels = await liveTvService.GetFilteredChannelsAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn("LiveTvService channel fetch failed, falling back to direct API: {0}", ex.Message);
-                channels = await FetchAllChannelsDirectAsync(config).ConfigureAwait(false);
-            }
-
-            // Fetch category names for guide chips (Tags on ChannelInfo)
-            Dictionary<int, string> categoryMap;
-            try
-            {
-                var cats = await liveTvService.GetLiveCategoriesAsync(cancellationToken).ConfigureAwait(false);
-                categoryMap = cats.ToDictionary(c => c.CategoryId, c => c.CategoryName);
-                Logger.Debug("Fetched {0} live categories for guide chips", categoryMap.Count);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn("Failed to fetch live categories for guide chips: {0}", ex.Message);
-                categoryMap = new Dictionary<int, string>();
-            }
-
-            // Fetch stream stats and UUID map from Dispatcharr in a single API call
             var newStats = new Dictionary<int, StreamStatsInfo>();
-            if (config.EnableDispatcharr && !string.IsNullOrEmpty(config.DispatcharrUrl))
+
+            // All three fetches run concurrently; each handles its own errors internally.
+            async Task<List<Client.Models.LiveStreamInfo>> channelsFetch()
             {
+                try
+                {
+                    return await liveTvService.GetFilteredChannelsAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("LiveTvService channel fetch failed, falling back to direct API: {0}", ex.Message);
+                    return await FetchAllChannelsDirectAsync(config).ConfigureAwait(false);
+                }
+            }
+
+            async Task<Dictionary<int, string>> categoriesFetch()
+            {
+                try
+                {
+                    var cats = await liveTvService.GetLiveCategoriesAsync(cancellationToken).ConfigureAwait(false);
+                    Logger.Debug("Fetched {0} live categories for guide chips", cats.Count);
+                    return cats.ToDictionary(c => c.CategoryId, c => c.CategoryName);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Failed to fetch live categories for guide chips: {0}", ex.Message);
+                    return new Dictionary<int, string>();
+                }
+            }
+
+            async Task dispatcharrFetch()
+            {
+                if (!config.EnableDispatcharr || string.IsNullOrEmpty(config.DispatcharrUrl))
+                    return;
                 try
                 {
                     _dispatcharrClient.Configure(config.DispatcharrUser, config.DispatcharrPass);
@@ -201,6 +206,14 @@ namespace Emby.Xtream.Plugin.Service
                 }
             }
 
+            var channelsTask = channelsFetch();
+            var categoriesTask = categoriesFetch();
+            var dispatcharrTask = dispatcharrFetch();
+
+            await Task.WhenAll(channelsTask, categoriesTask, dispatcharrTask).ConfigureAwait(false);
+
+            var channels = channelsTask.Result;
+            var categoryMap = categoriesTask.Result;
             int statsCount = newStats.Count;
 
             var result = channels.Select(channel =>

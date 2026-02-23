@@ -494,6 +494,12 @@ namespace Emby.Xtream.Plugin.Service
                         return new List<EpgProgram>();
                     }
 
+                    // Warm the per-channel cache so GetProgramsInternal finds hits without re-fetching.
+                    lock (_perChannelEpgLock)
+                    {
+                        _perChannelEpgCache[channel.StreamId] = (epgListings.Listings, DateTime.UtcNow);
+                    }
+
                     var channelId = !string.IsNullOrEmpty(channel.EpgChannelId)
                         ? channel.EpgChannelId
                         : channel.StreamId.ToString(CultureInfo.InvariantCulture);
