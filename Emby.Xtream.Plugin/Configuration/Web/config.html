@@ -662,8 +662,20 @@
                             </label>
                             <div class="fieldDescription checkboxFieldDescription">
                                 Set ListingsChannelId on tuner channels using the Gracenote Station ID
-                                from Dispatcharr. Enables Emby's built-in guide data (Gracenote) to
-                                auto-match channels. Only enable if you use Emby Guide Data, not XMLTV.
+                                from Dispatcharr. Only for Emby Premiere Guide Data (Emby's own paid
+                                guide service). Has no effect with XMLTV or external guide providers.
+                            </div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription" style="margin-top:0.5em;">
+                            <label>
+                                <input class="chkEnableGracenoteTvgId" type="checkbox" is="emby-checkbox" />
+                                <span>Use Gracenote Station ID as tvg-id</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">
+                                Override the tvg-id in M3U output with the Gracenote Station ID from
+                                Dispatcharr. Use this if your Gracenote Station IDs are populated in
+                                Dispatcharr (e.g. via Channel Identifiarr) and you want Emby to use
+                                them for guide matching.
                             </div>
                         </div>
                         <button class="btnTestDispatcharr raised button-secondary" is="emby-button" type="button">

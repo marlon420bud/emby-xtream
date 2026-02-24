@@ -343,9 +343,17 @@ namespace Emby.Xtream.Plugin.Service
                     config.ChannelRemoveTerms,
                     config.EnableChannelNameCleaning);
 
-                // Use Dispatcharr tvg_id override when available; fall back to Xtream epg_channel_id.
+                // Priority for tvg-id:
+                //  1. Gracenote station ID (when EnableGracenoteTvgId is on) — for Channel Identifiarr / Gracenote-based guide providers
+                //  2. Dispatcharr tvg_id override
+                //  3. Xtream epg_channel_id
+                //  4. numeric stream ID
                 string epgId;
-                if (tvgIdMap != null && tvgIdMap.TryGetValue(channel.StreamId, out var dispatcharrTvgId)
+                if (config.EnableGracenoteTvgId
+                    && stationIdMap != null && stationIdMap.TryGetValue(channel.StreamId, out var gracenoteId)
+                    && !string.IsNullOrEmpty(gracenoteId))
+                    epgId = gracenoteId;
+                else if (tvgIdMap != null && tvgIdMap.TryGetValue(channel.StreamId, out var dispatcharrTvgId)
                     && !string.IsNullOrEmpty(dispatcharrTvgId))
                     epgId = dispatcharrTvgId;
                 else

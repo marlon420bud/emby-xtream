@@ -352,6 +352,7 @@ function (BaseView, loading) {
             view.querySelector('.chkDispatcharrFallback').checked = config.DispatcharrFallbackToXtream !== false;
             view.querySelector('.chkForceAudioTranscode').checked = !!config.ForceAudioTranscode;
             view.querySelector('.chkEnableGracenoteMatching').checked = !!config.EnableGracenoteMatching;
+            view.querySelector('.chkEnableGracenoteTvgId').checked = !!config.EnableGracenoteTvgId;
 
             // Pre-parse cached categories so folder cards render correctly from the start
             var cachedVodCats = null;
@@ -473,6 +474,7 @@ function (BaseView, loading) {
             config.DispatcharrFallbackToXtream = view.querySelector('.chkDispatcharrFallback').checked;
             config.ForceAudioTranscode = view.querySelector('.chkForceAudioTranscode').checked;
             config.EnableGracenoteMatching = view.querySelector('.chkEnableGracenoteMatching').checked;
+            config.EnableGracenoteTvgId = view.querySelector('.chkEnableGracenoteTvgId').checked;
 
             // VOD Movies
             config.SyncMovies = view.querySelector('.chkSyncMovies').checked;
