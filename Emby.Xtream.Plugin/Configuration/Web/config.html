@@ -661,9 +661,10 @@
                                 <span>Use Gracenote guide matching</span>
                             </label>
                             <div class="fieldDescription checkboxFieldDescription">
-                                Set ListingsChannelId on tuner channels using the Gracenote Station ID
-                                from Dispatcharr. Only for Emby Premiere Guide Data (Emby's own paid
-                                guide service). Has no effect with XMLTV or external guide providers.
+                                Match tuner channels to guide data using the Gracenote Station ID from
+                                Dispatcharr. Enable this if you use Channel Identifiarr, Emby Premiere
+                                Guide Data, or any other Gracenote-based guide source. This is the
+                                primary option for guide matching.
                             </div>
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription" style="margin-top:0.5em;">
@@ -672,10 +673,10 @@
                                 <span>Use Gracenote Station ID as tvg-id</span>
                             </label>
                             <div class="fieldDescription checkboxFieldDescription">
-                                Override the tvg-id in M3U output with the Gracenote Station ID from
-                                Dispatcharr. Use this if your Gracenote Station IDs are populated in
-                                Dispatcharr (e.g. via Channel Identifiarr) and you want Emby to use
-                                them for guide matching.
+                                Override the tvg-id in the M3U output with the Gracenote Station ID
+                                from Dispatcharr. Only needed if you feed the plugin's M3U to an
+                                external tool (e.g. Plex, or a separate M3U tuner). Not needed for
+                                Xtream tuner guide matching — use the option above for that.
                             </div>
                         </div>
                         <button class="btnTestDispatcharr raised button-secondary" is="emby-button" type="button">
