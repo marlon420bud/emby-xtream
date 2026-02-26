@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Emby.Xtream.Plugin.Client.Models
@@ -44,5 +45,7 @@ namespace Emby.Xtream.Plugin.Client.Models
         [JsonIgnore] public bool IsPremiere { get; set; }
         [JsonIgnore] public bool IsPlainText { get; set; }
         [JsonIgnore] public string ImageUrl { get; set; }
+        [JsonIgnore] public List<string> Categories { get; set; }
+        [JsonIgnore] public string SubTitle { get; set; }
     }
 }

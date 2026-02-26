@@ -125,6 +125,7 @@ namespace Emby.Xtream.Plugin.Service
                 var title = p.IsPlainText ? p.Title : LiveTvService.DecodeBase64(p.Title);
                 var description = p.IsPlainText ? p.Description : LiveTvService.DecodeBase64(p.Description);
 
+                var cats = p.Categories;
                 result.Add(new ProgramInfo
                 {
                     Id = string.Format(CultureInfo.InvariantCulture, "xtream_epg_{0}_{1}", streamId, p.StartTimestamp),
@@ -133,10 +134,17 @@ namespace Emby.Xtream.Plugin.Service
                     EndDate = DateTimeOffset.FromUnixTimeSeconds(p.StopTimestamp).UtcDateTime,
                     Name = string.IsNullOrEmpty(title) ? "Unknown" : title,
                     Overview = string.IsNullOrEmpty(description) ? null : description,
+                    EpisodeTitle = string.IsNullOrEmpty(p.SubTitle) ? null : p.SubTitle,
                     IsLive = p.IsLive,
                     IsRepeat = p.IsPreviouslyShown,
                     IsPremiere = p.IsNew || p.IsPremiere,
                     ImageUrl = string.IsNullOrEmpty(p.ImageUrl) ? null : p.ImageUrl,
+                    Genres = cats,
+                    IsSports = cats != null && cats.Exists(c => c.IndexOf("sport", System.StringComparison.OrdinalIgnoreCase) >= 0),
+                    IsNews = cats != null && cats.Exists(c => c.IndexOf("news", System.StringComparison.OrdinalIgnoreCase) >= 0),
+                    IsMovie = cats != null && cats.Exists(c => c.IndexOf("movie", System.StringComparison.OrdinalIgnoreCase) >= 0 || c.IndexOf("film", System.StringComparison.OrdinalIgnoreCase) >= 0),
+                    IsKids = cats != null && cats.Exists(c => c.IndexOf("children", System.StringComparison.OrdinalIgnoreCase) >= 0 || c.IndexOf("kids", System.StringComparison.OrdinalIgnoreCase) >= 0),
+                    IsSeries = cats != null && cats.Exists(c => c.IndexOf("series", System.StringComparison.OrdinalIgnoreCase) >= 0),
                 });
             }
 

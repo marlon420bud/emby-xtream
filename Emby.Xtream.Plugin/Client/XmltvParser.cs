@@ -129,6 +129,24 @@ namespace Emby.Xtream.Plugin.Client
                 {
                     program.IsPremiere = true;
                 }
+                else if (string.Equals(name, "category", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!reader.IsEmptyElement)
+                    {
+                        var cat = ReadText(reader);
+                        if (!string.IsNullOrWhiteSpace(cat))
+                        {
+                            if (program.Categories == null)
+                                program.Categories = new List<string>();
+                            program.Categories.Add(cat);
+                        }
+                    }
+                }
+                else if (string.Equals(name, "sub-title", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!reader.IsEmptyElement)
+                        program.SubTitle = ReadText(reader);
+                }
                 else if (string.Equals(name, "icon", StringComparison.OrdinalIgnoreCase))
                 {
                     var src = reader.GetAttribute("src");
