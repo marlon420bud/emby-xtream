@@ -25,7 +25,6 @@ Full Live TV integration with Emby's native TV guide.
 - **M3U playlist generation** with channel metadata, logos, and EPG channel IDs
 - **XMLTV electronic program guide** with configurable fetch window (1-14 days)
 - **Category-based filtering** — select which channel groups to include
-- **Catch-up / Timeshift** — access previously aired content (configurable 1-30 day lookback)
 - **Stream format selection** — MPEG-TS or HLS (M3U8)
 - **Adult content filtering** — opt-in toggle for adult-flagged channels
 - **Automatic caching** — M3U (15 min) and EPG (30 min) with thread-safe invalidation
@@ -147,9 +146,8 @@ Copy `Emby.Xtream.Plugin.dll` to your Emby data directory under `plugins/`, then
 3. Click **Refresh Categories** to load channel groups
 4. Select the categories you want
 5. Configure **EPG** settings (days to fetch, cache duration)
-6. Enable **Catch-up** if your provider supports it
-7. Click **Save**
-8. Go to **Emby Settings > Live TV** and add a new tuner:
+6. Click **Save**
+7. Go to **Emby Settings > Live TV** and add a new tuner:
    - Type: **Xtream Tuner**
    - It will auto-discover the plugin's M3U and EPG endpoints
 
@@ -199,7 +197,6 @@ Download the latest DLL from [Releases](../../releases/latest), replace the file
 | **EPG Cache** | 30 min | How long to cache EPG data (5-1440 min) |
 | **EPG Days** | 2 | Days of guide data to fetch (1-14) |
 | **M3U Cache** | 15 min | How long to cache channel playlists (1-1440 min) |
-| **Catch-up Days** | 7 | Timeshift lookback window (1-30 days) |
 | **STRM Library Path** | `/config/xtream` | Where STRM files are written |
 | **Smart Skip** | On | Skip existing STRM files during sync |
 | **Sync Parallelism** | 3 | Concurrent operations during sync (1-10) |
