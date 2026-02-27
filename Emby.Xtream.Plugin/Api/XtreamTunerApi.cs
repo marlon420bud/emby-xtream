@@ -100,6 +100,9 @@ namespace Emby.Xtream.Plugin.Api
     [Route("/XtreamTuner/TestDispatcharr", "POST", Summary = "Tests connection to Dispatcharr")]
     public class TestDispatcharrConnection : IReturn<TestConnectionResult>
     {
+        public string Url { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
 
     [Route("/XtreamTuner/CheckUpdate", "GET", Summary = "Checks GitHub for a newer plugin release")]
@@ -904,13 +907,15 @@ namespace Emby.Xtream.Plugin.Api
 
         public async Task<object> Post(TestDispatcharrConnection request)
         {
-            var config = Plugin.Instance.Configuration;
             var result = new TestConnectionResult();
+            var url = request.Url;
+            var user = request.Username ?? "";
+            var pass = request.Password ?? "";
 
-            if (string.IsNullOrEmpty(config.DispatcharrUrl))
+            if (string.IsNullOrEmpty(url))
             {
                 result.Success = false;
-                result.Message = "Please configure Dispatcharr URL first.";
+                result.Message = "Please enter Dispatcharr URL.";
                 return result;
             }
 
@@ -918,10 +923,10 @@ namespace Emby.Xtream.Plugin.Api
             {
                 var logManager = Plugin.Instance.ApplicationHost.Resolve<ILogManager>();
                 var client = new DispatcharrClient(logManager.GetLogger("XtreamTuner.DispatcharrTest"));
-                client.Configure(config.DispatcharrUser ?? "", config.DispatcharrPass ?? "");
+                client.Configure(user, pass);
 
                 var (success, message) = await client.TestConnectionDetailedAsync(
-                    config.DispatcharrUrl, config.DispatcharrUser ?? "", config.DispatcharrPass ?? "",
+                    url, user, pass,
                     CancellationToken.None).ConfigureAwait(false);
 
                 result.Success = success;
