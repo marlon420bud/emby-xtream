@@ -1175,7 +1175,7 @@ namespace Emby.Xtream.Plugin.Service
             var url = string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}/player_api.php?username={1}&password={2}&action={3}",
-                config.BaseUrl, config.Username, config.Password, action);
+                config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty), action);
 
             var json = await SharedHttpClient.GetStringAsync(url).ConfigureAwait(false);
             return STJ.JsonSerializer.Deserialize<List<Category>>(json, JsonOptions)
@@ -1218,7 +1218,7 @@ namespace Emby.Xtream.Plugin.Service
                 var url = string.Format(
                     CultureInfo.InvariantCulture,
                     "{0}/player_api.php?username={1}&password={2}&action=get_vod_streams",
-                    config.BaseUrl, config.Username, config.Password);
+                    config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty));
 
                 var json = await SharedHttpClient.GetStringAsync(url).ConfigureAwait(false);
                 allStreams = STJ.JsonSerializer.Deserialize<List<VodStreamInfo>>(json, JsonOptions)
@@ -1235,7 +1235,7 @@ namespace Emby.Xtream.Plugin.Service
                         var url = string.Format(
                             CultureInfo.InvariantCulture,
                             "{0}/player_api.php?username={1}&password={2}&action=get_vod_streams&category_id={3}",
-                            config.BaseUrl, config.Username, config.Password, catId);
+                            config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty), catId);
 
                         var json = await SharedHttpClient.GetStringAsync(url).ConfigureAwait(false);
                         var streams = STJ.JsonSerializer.Deserialize<List<VodStreamInfo>>(json, JsonOptions)
@@ -1286,7 +1286,7 @@ namespace Emby.Xtream.Plugin.Service
                 var url = string.Format(
                     CultureInfo.InvariantCulture,
                     "{0}/player_api.php?username={1}&password={2}&action=get_series",
-                    config.BaseUrl, config.Username, config.Password);
+                    config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty));
 
                 var json = await SharedHttpClient.GetStringAsync(url).ConfigureAwait(false);
                 allSeries = STJ.JsonSerializer.Deserialize<List<SeriesInfo>>(json, JsonOptions)
@@ -1303,7 +1303,7 @@ namespace Emby.Xtream.Plugin.Service
                         var url = string.Format(
                             CultureInfo.InvariantCulture,
                             "{0}/player_api.php?username={1}&password={2}&action=get_series&category_id={3}",
-                            config.BaseUrl, config.Username, config.Password, catId);
+                            config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty), catId);
 
                         var json = await SharedHttpClient.GetStringAsync(url).ConfigureAwait(false);
                         var series = STJ.JsonSerializer.Deserialize<List<SeriesInfo>>(json, JsonOptions)
@@ -1347,7 +1347,7 @@ namespace Emby.Xtream.Plugin.Service
             var url = string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}/player_api.php?username={1}&password={2}&action=get_series_info&series_id={3}",
-                config.BaseUrl, config.Username, config.Password, seriesId);
+                config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty), seriesId);
 
             var json = await SharedHttpClient.GetStringAsync(url).ConfigureAwait(false);
             return STJ.JsonSerializer.Deserialize<SeriesDetailInfo>(json, JsonOptions);

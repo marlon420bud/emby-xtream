@@ -269,7 +269,7 @@ namespace Emby.Xtream.Plugin.Api
             var url = string.Format(
                 System.Globalization.CultureInfo.InvariantCulture,
                 "{0}/player_api.php?username={1}&password={2}&action=get_vod_categories",
-                config.BaseUrl, config.Username, config.Password);
+                config.BaseUrl, Uri.EscapeDataString(config.Username), Uri.EscapeDataString(config.Password));
 
             using (var httpClient = new System.Net.Http.HttpClient())
             {
@@ -311,7 +311,7 @@ namespace Emby.Xtream.Plugin.Api
                 var url = string.Format(
                     System.Globalization.CultureInfo.InvariantCulture,
                     "{0}/player_api.php?username={1}&password={2}&action=get_series_categories",
-                    config.BaseUrl, config.Username, config.Password);
+                    config.BaseUrl, Uri.EscapeDataString(config.Username), Uri.EscapeDataString(config.Password));
 
                 var json = await httpClient.GetStringAsync(url).ConfigureAwait(false);
                 var categories = System.Text.Json.JsonSerializer.Deserialize<List<Category>>(json, jsonOptions)
@@ -324,7 +324,7 @@ namespace Emby.Xtream.Plugin.Api
                     var seriesUrl = string.Format(
                         System.Globalization.CultureInfo.InvariantCulture,
                         "{0}/player_api.php?username={1}&password={2}&action=get_series",
-                        config.BaseUrl, config.Username, config.Password);
+                        config.BaseUrl, Uri.EscapeDataString(config.Username), Uri.EscapeDataString(config.Password));
 
                     var seriesJson = await httpClient.GetStringAsync(seriesUrl).ConfigureAwait(false);
                     var seriesList = System.Text.Json.JsonSerializer.Deserialize<List<SeriesInfo>>(seriesJson, jsonOptions)
@@ -886,14 +886,58 @@ namespace Emby.Xtream.Plugin.Api
                 var url = string.Format(
                     System.Globalization.CultureInfo.InvariantCulture,
                     "{0}/player_api.php?username={1}&password={2}",
-                    config.BaseUrl, config.Username, config.Password);
+                    config.BaseUrl, Uri.EscapeDataString(config.Username), Uri.EscapeDataString(config.Password));
 
                 using (var httpClient = new System.Net.Http.HttpClient())
                 {
                     httpClient.Timeout = TimeSpan.FromSeconds(10);
                     var response = await httpClient.GetStringAsync(url).ConfigureAwait(false);
-                    result.Success = true;
-                    result.Message = "Connection successful!";
+
+                    try
+                    {
+                        using (var doc = System.Text.Json.JsonDocument.Parse(response))
+                        {
+                            if (doc.RootElement.TryGetProperty("user_info", out var userInfo))
+                            {
+                                var auth = 0;
+                                if (userInfo.TryGetProperty("auth", out var authEl))
+                                {
+                                    if (authEl.ValueKind == System.Text.Json.JsonValueKind.Number)
+                                        auth = authEl.GetInt32();
+                                    else if (authEl.ValueKind == System.Text.Json.JsonValueKind.String
+                                             && int.TryParse(authEl.GetString(), out var n))
+                                        auth = n;
+                                }
+
+                                string status = null;
+                                if (userInfo.TryGetProperty("status", out var statusEl))
+                                    status = statusEl.GetString();
+
+                                if (auth == 1)
+                                {
+                                    result.Success = true;
+                                    result.Message = "Connection successful!";
+                                }
+                                else
+                                {
+                                    result.Success = false;
+                                    result.Message = string.Format(
+                                        "Authentication failed: account status is '{0}'.",
+                                        status ?? "unknown");
+                                }
+                            }
+                            else
+                            {
+                                result.Success = false;
+                                result.Message = "Server responded but returned an unexpected format. Verify the server URL.";
+                            }
+                        }
+                    }
+                    catch (System.Text.Json.JsonException)
+                    {
+                        result.Success = false;
+                        result.Message = "Server did not return a valid Xtream API response. Verify the server URL.";
+                    }
                 }
             }
             catch (Exception ex)

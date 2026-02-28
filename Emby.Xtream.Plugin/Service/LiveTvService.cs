@@ -142,7 +142,7 @@ namespace Emby.Xtream.Plugin.Service
             var url = string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}/player_api.php?username={1}&password={2}&action=get_live_categories",
-                config.BaseUrl, config.Username, config.Password);
+                config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty));
 
             using (var httpClient = new HttpClient())
             {
@@ -245,7 +245,7 @@ namespace Emby.Xtream.Plugin.Service
             var url = string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}/player_api.php?username={1}&password={2}&action=get_live_streams",
-                config.BaseUrl, config.Username, config.Password);
+                config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty));
 
             using (var httpClient = new HttpClient())
             {
@@ -261,7 +261,7 @@ namespace Emby.Xtream.Plugin.Service
             var url = string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}/player_api.php?username={1}&password={2}&action=get_live_streams&category_id={3}",
-                config.BaseUrl, config.Username, config.Password, categoryId);
+                config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty), categoryId);
 
             using (var httpClient = new HttpClient())
             {
