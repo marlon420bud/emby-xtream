@@ -162,6 +162,25 @@ namespace Emby.Xtream.Plugin.Service
                 });
             }
 
+            // No EPG data — return a dummy entry spanning the requested window so the channel
+            // row stays visible and clickable in the guide (matches M3U tuner behaviour).
+            if (result.Count == 0)
+            {
+                var channelName = _cachedChannels?.Find(c => c.TunerChannelId == tunerChannelId)?.Name;
+                if (!string.IsNullOrEmpty(channelName))
+                {
+                    result.Add(new ProgramInfo
+                    {
+                        Id = string.Format(CultureInfo.InvariantCulture, "xtream_dummy_{0}_{1}", streamId, startDateUtc.ToUnixTimeSeconds()),
+                        ChannelId = tunerChannelId,
+                        StartDate = startDateUtc.UtcDateTime,
+                        EndDate = endDateUtc.UtcDateTime,
+                        Name = channelName,
+                    });
+                    Logger.Debug("GetProgramsInternal: no EPG for channel {0}, returning dummy entry", streamId);
+                }
+            }
+
             Logger.Debug("GetProgramsInternal: returning {0} programs for channel {1}", result.Count, streamId);
             return result;
         }
