@@ -9,6 +9,7 @@ namespace Emby.Xtream.Plugin
         public string BaseUrl { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public string HttpUserAgent { get; set; } = string.Empty;
 
         // Live TV
         public bool EnableLiveTv { get; set; } = true;

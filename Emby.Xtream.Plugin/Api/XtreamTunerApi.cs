@@ -276,7 +276,7 @@ namespace Emby.Xtream.Plugin.Api
                 "{0}/player_api.php?username={1}&password={2}&action=get_vod_categories",
                 config.BaseUrl, Uri.EscapeDataString(config.Username), Uri.EscapeDataString(config.Password));
 
-            using (var httpClient = new System.Net.Http.HttpClient())
+            using (var httpClient = Plugin.CreateHttpClient())
             {
                 var json = await httpClient.GetStringAsync(url).ConfigureAwait(false);
                 var categories = System.Text.Json.JsonSerializer.Deserialize<List<Category>>(json,
@@ -311,7 +311,7 @@ namespace Emby.Xtream.Plugin.Api
                 PropertyNameCaseInsensitive = true,
             };
 
-            using (var httpClient = new System.Net.Http.HttpClient())
+            using (var httpClient = Plugin.CreateHttpClient())
             {
                 var url = string.Format(
                     System.Globalization.CultureInfo.InvariantCulture,
@@ -893,9 +893,8 @@ namespace Emby.Xtream.Plugin.Api
                     "{0}/player_api.php?username={1}&password={2}",
                     config.BaseUrl, Uri.EscapeDataString(config.Username), Uri.EscapeDataString(config.Password));
 
-                using (var httpClient = new System.Net.Http.HttpClient())
+                using (var httpClient = Plugin.CreateHttpClient())
                 {
-                    httpClient.Timeout = TimeSpan.FromSeconds(10);
                     var response = await httpClient.GetStringAsync(url).ConfigureAwait(false);
 
                     try

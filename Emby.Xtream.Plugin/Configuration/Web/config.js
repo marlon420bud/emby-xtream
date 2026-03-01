@@ -331,6 +331,7 @@ function (BaseView, loading) {
             view.querySelector('.txtBaseUrl').value = config.BaseUrl || '';
             view.querySelector('.txtUsername').value = config.Username || '';
             view.querySelector('.txtPassword').value = config.Password || '';
+            view.querySelector('.txtHttpUserAgent').value = config.HttpUserAgent || '';
 
             view.querySelector('.chkEnableLiveTv').checked = config.EnableLiveTv !== false;
             view.querySelector('.selOutputFormat').value = config.LiveTvOutputFormat || 'ts';
@@ -452,6 +453,7 @@ function (BaseView, loading) {
             config.BaseUrl = view.querySelector('.txtBaseUrl').value.replace(/\/+$/, '');
             config.Username = view.querySelector('.txtUsername').value;
             config.Password = view.querySelector('.txtPassword').value;
+            config.HttpUserAgent = view.querySelector('.txtHttpUserAgent').value;
 
             config.EnableLiveTv = view.querySelector('.chkEnableLiveTv').checked;
             config.LiveTvOutputFormat = view.querySelector('.selOutputFormat').value;

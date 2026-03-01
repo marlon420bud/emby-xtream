@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using Emby.Xtream.Plugin.Service;
 using MediaBrowser.Common;
 using MediaBrowser.Common.Configuration;
@@ -42,6 +43,18 @@ namespace Emby.Xtream.Plugin
         public IApplicationHost ApplicationHost => _applicationHost;
 
         public new IApplicationPaths ApplicationPaths => _applicationPaths;
+
+        /// <summary>
+        /// Creates an HttpClient configured with the plugin's User-Agent setting.
+        /// </summary>
+        public static HttpClient CreateHttpClient(int timeoutSeconds = 10)
+        {
+            var client = new HttpClient { Timeout = TimeSpan.FromSeconds(timeoutSeconds) };
+            var ua = _instance?.Configuration?.HttpUserAgent;
+            if (!string.IsNullOrEmpty(ua))
+                client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", ua);
+            return client;
+        }
 
         public LiveTvService LiveTvService => _liveTvService;
 

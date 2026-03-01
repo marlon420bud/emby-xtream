@@ -86,6 +86,14 @@ namespace Emby.Xtream.Plugin.Service
         private static readonly int MaxHistoryEntries = 10;
         private static readonly HttpClient SharedHttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
 
+        private static void ApplyUserAgentToSharedClient()
+        {
+            var ua = Plugin.Instance?.Configuration?.HttpUserAgent;
+            SharedHttpClient.DefaultRequestHeaders.Remove("User-Agent");
+            if (!string.IsNullOrEmpty(ua))
+                SharedHttpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", ua);
+        }
+
         private readonly ILogger _logger;
         private readonly TmdbLookupService _tmdbLookupService;
         private List<SyncHistoryEntry> _syncHistory;
@@ -171,6 +179,7 @@ namespace Emby.Xtream.Plugin.Service
 
         public async Task SyncMoviesAsync(CancellationToken cancellationToken)
         {
+            ApplyUserAgentToSharedClient();
             var config = Plugin.Instance.Configuration;
             _movieProgress = new SyncProgress { IsRunning = true, Phase = "Starting movie sync" };
             lock (_failedItemsLock) { _failedItems.Clear(); }
@@ -488,6 +497,7 @@ namespace Emby.Xtream.Plugin.Service
 
         public async Task SyncSeriesAsync(CancellationToken cancellationToken)
         {
+            ApplyUserAgentToSharedClient();
             var config = Plugin.Instance.Configuration;
             _seriesProgress = new SyncProgress { IsRunning = true, Phase = "Starting series sync" };
             _episodeProgress = new SyncProgress { IsRunning = true };

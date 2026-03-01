@@ -426,6 +426,12 @@
                     <div class="inputContainer">
                         <input class="txtPassword" type="password" is="emby-input" label="Password" />
                     </div>
+                    <div class="inputContainer">
+                        <input class="txtHttpUserAgent" type="text" is="emby-input" label="User-Agent (optional)" />
+                        <div class="fieldDescription">
+                            Leave blank for most providers. Set to <code>VLC/3.0.21 LibVLC/3.0.21</code> (or your provider's required value) if categories and channels fail to load with a 401 error even though your credentials are correct.
+                        </div>
+                    </div>
                     <button class="btnTestConnection raised button-secondary" is="emby-button" type="button">
                         <span>Test Connection</span>
                     </button>
