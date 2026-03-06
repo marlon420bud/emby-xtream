@@ -682,6 +682,7 @@ namespace Emby.Xtream.Plugin.Service
                 AnalyzeDurationMs = suppressProbing ? 0 : (int?)500,
                 RequiresOpening = true,
                 RequiresClosing = true,
+                WallClockStart = DateTime.UtcNow,
             };
 
             if (hasStats)
