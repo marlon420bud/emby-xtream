@@ -162,6 +162,9 @@ namespace Emby.Xtream.Plugin.Service
                 var description = p.IsPlainText ? p.Description : LiveTvService.DecodeBase64(p.Description);
 
                 var cats = p.Categories;
+                var isMovie = cats != null && cats.Exists(c => c.IndexOf("movie", System.StringComparison.OrdinalIgnoreCase) >= 0 || c.IndexOf("film", System.StringComparison.OrdinalIgnoreCase) >= 0);
+                var isSports = cats != null && cats.Exists(c => c.IndexOf("sport", System.StringComparison.OrdinalIgnoreCase) >= 0);
+                var isSeries = !isMovie && !isSports;
                 try
                 {
                     result.Add(new ProgramInfo
@@ -178,11 +181,12 @@ namespace Emby.Xtream.Plugin.Service
                         IsPremiere = p.IsNew || p.IsPremiere,
                         ImageUrl = IsValidHttpUrl(p.ImageUrl) ? p.ImageUrl : null,
                         Genres = cats ?? new List<string>(),
-                        IsSports = cats != null && cats.Exists(c => c.IndexOf("sport", System.StringComparison.OrdinalIgnoreCase) >= 0),
+                        IsSports = isSports,
                         IsNews = cats != null && cats.Exists(c => c.IndexOf("news", System.StringComparison.OrdinalIgnoreCase) >= 0),
-                        IsMovie = cats != null && cats.Exists(c => c.IndexOf("movie", System.StringComparison.OrdinalIgnoreCase) >= 0 || c.IndexOf("film", System.StringComparison.OrdinalIgnoreCase) >= 0),
+                        IsMovie = isMovie,
                         IsKids = cats != null && cats.Exists(c => c.IndexOf("children", System.StringComparison.OrdinalIgnoreCase) >= 0 || c.IndexOf("kids", System.StringComparison.OrdinalIgnoreCase) >= 0),
-                        IsSeries = cats != null && cats.Exists(c => c.IndexOf("series", System.StringComparison.OrdinalIgnoreCase) >= 0),
+                        IsSeries = isSeries,
+                        SeriesId = isSeries && !string.IsNullOrEmpty(title) ? title.ToLowerInvariant() : null,
                     });
                 }
                 catch (Exception ex)
@@ -208,6 +212,7 @@ namespace Emby.Xtream.Plugin.Service
                         StartDate = startDateUtc.UtcDateTime,
                         EndDate = endDateUtc.UtcDateTime,
                         Name = channelName,
+                        Genres = new List<string>(),
                     });
                     Logger.Debug("GetProgramsInternal: no EPG for channel {0}, returning dummy entry", streamId);
                 }
