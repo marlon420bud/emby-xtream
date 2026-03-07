@@ -505,7 +505,7 @@ namespace Emby.Xtream.Plugin.Service
 
             _streamStats.TryGetValue(streamId, out var stats);
 
-            var mediaSource = CreateMediaSourceInfo(streamId, streamUrl, stats, isDispatcharr, config.ForceAudioTranscode);
+            var mediaSource = CreateMediaSourceInfo(streamId, streamUrl, stats, isDispatcharr, config.ForceAudioTranscode, config.HttpUserAgent);
             Logger.Info("[stream-timing] ch={0} CreateMediaSource={1}ms hasStats={2}", tunerChannel?.Name, sw.ElapsedMilliseconds, stats != null);
 
             return new List<MediaSourceInfo> { mediaSource };
@@ -539,10 +539,10 @@ namespace Emby.Xtream.Plugin.Service
             Logger.Info("[stream-timing] ch={0} BuildUrl={1}ms isDispatcharr={2}", tunerChannel?.Name, sw.ElapsedMilliseconds, isDispatcharr);
             sw.Restart();
 
-            var mediaSource = CreateMediaSourceInfo(streamId, streamUrl, stats, isDispatcharr, config.ForceAudioTranscode);
+            var mediaSource = CreateMediaSourceInfo(streamId, streamUrl, stats, isDispatcharr, config.ForceAudioTranscode, config.HttpUserAgent);
             Logger.Info("[stream-timing] ch={0} CreateMediaSource={1}ms hasStats={2}", tunerChannel?.Name, sw.ElapsedMilliseconds, stats != null);
 
-            var httpClient = new HttpClient();
+            var httpClient = Plugin.CreateHttpClient();
             ILiveStream liveStream = new XtreamLiveStream(mediaSource, tuner.Id, httpClient, Logger);
 
             Logger.Info("Opening live stream for channel {0} (stream {1})",
@@ -678,7 +678,8 @@ namespace Emby.Xtream.Plugin.Service
 
         private MediaSourceInfo CreateMediaSourceInfo(
             int streamId, string streamUrl, StreamStatsInfo stats,
-            bool disableProbing = false, bool forceAudioTranscode = false)
+            bool disableProbing = false, bool forceAudioTranscode = false,
+            string userAgent = null)
         {
             var sourceId = "xtream_live_" + streamId.ToString(CultureInfo.InvariantCulture);
 
@@ -725,6 +726,14 @@ namespace Emby.Xtream.Plugin.Service
                 RequiresClosing = true,
                 WallClockStart = DateTime.UtcNow,
             };
+
+            if (!string.IsNullOrEmpty(userAgent))
+            {
+                mediaSource.RequiredHttpHeaders = new Dictionary<string, string>
+                {
+                    ["User-Agent"] = userAgent
+                };
+            }
 
             if (hasStats)
             {
