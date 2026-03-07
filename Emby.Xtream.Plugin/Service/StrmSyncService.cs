@@ -187,7 +187,7 @@ namespace Emby.Xtream.Plugin.Service
         /// so the next run performs a full re-sync and regenerates files with corrected names.
         /// Returns true when a version upgrade was applied (timestamps were reset), false otherwise.
         /// </summary>
-        private bool CheckAndUpgradeNamingVersion(PluginConfiguration config, Action saveConfig)
+        internal bool CheckAndUpgradeNamingVersion(PluginConfiguration config, Action saveConfig)
         {
             if (config.StrmNamingVersion >= CurrentStrmNamingVersion)
                 return false;
