@@ -86,6 +86,9 @@ namespace Emby.Xtream.Plugin.Service
         private static readonly int MaxHistoryEntries = 10;
         private static readonly HttpClient SharedHttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
 
+        // Increment when naming logic changes so existing installs force a full re-sync on next run.
+        internal const int CurrentStrmNamingVersion = 1;
+
         private static void ApplyUserAgentToSharedClient()
         {
             var ua = Plugin.Instance?.Configuration?.HttpUserAgent;
@@ -177,10 +180,31 @@ namespace Emby.Xtream.Plugin.Service
             }
         }
 
+        /// <summary>
+        /// Checks whether the stored STRM naming version is current. If not, resets sync timestamps
+        /// so the next run performs a full re-sync and regenerates files with corrected names.
+        /// Returns true when a version upgrade was applied (timestamps were reset), false otherwise.
+        /// </summary>
+        private bool CheckAndUpgradeNamingVersion(PluginConfiguration config)
+        {
+            if (config.StrmNamingVersion >= CurrentStrmNamingVersion)
+                return false;
+
+            _logger.Info("STRM naming version upgraded ({0} → {1}); resetting sync timestamps for full re-sync",
+                config.StrmNamingVersion, CurrentStrmNamingVersion);
+
+            config.StrmNamingVersion = CurrentStrmNamingVersion;
+            config.LastMovieSyncTimestamp = 0;
+            config.LastSeriesSyncTimestamp = 0;
+            Plugin.Instance.SaveConfiguration();
+            return true;
+        }
+
         public async Task SyncMoviesAsync(CancellationToken cancellationToken)
         {
             ApplyUserAgentToSharedClient();
             var config = Plugin.Instance.Configuration;
+            CheckAndUpgradeNamingVersion(config);
             _movieProgress = new SyncProgress { IsRunning = true, Phase = "Starting movie sync" };
             lock (_failedItemsLock) { _failedItems.Clear(); }
             var movieSyncStart = DateTime.UtcNow;
@@ -499,6 +523,7 @@ namespace Emby.Xtream.Plugin.Service
         {
             ApplyUserAgentToSharedClient();
             var config = Plugin.Instance.Configuration;
+            CheckAndUpgradeNamingVersion(config);
             _seriesProgress = new SyncProgress { IsRunning = true, Phase = "Starting series sync" };
             _episodeProgress = new SyncProgress { IsRunning = true };
             lock (_failedItemsLock) { _failedItems.RemoveAll(i => i.ItemType == "Series"); }

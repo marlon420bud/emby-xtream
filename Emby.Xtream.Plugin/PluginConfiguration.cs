@@ -100,6 +100,7 @@ namespace Emby.Xtream.Plugin
         public string LastChannelListHash { get; set; } = string.Empty;
         public long LastMovieSyncTimestamp { get; set; }
         public long LastSeriesSyncTimestamp { get; set; }
+        public int StrmNamingVersion { get; set; }  // default 0; bumped when naming logic changes to force re-sync
         public string SyncHistoryJson { get; set; } = string.Empty;
     }
 
