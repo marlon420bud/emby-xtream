@@ -426,6 +426,9 @@
                     <div class="inputContainer">
                         <input class="txtPassword" type="password" is="emby-input" label="Password" />
                     </div>
+                    <div class="fieldDescription" style="margin-top:-0.25em; margin-bottom:0.75em;">
+                        If you are pointing this at Dispatcharr, use the <strong>Xtream API credentials</strong> from Dispatcharr (Settings → Xtream Codes), not your Dispatcharr web UI login.
+                    </div>
                     <div class="inputContainer">
                         <input class="txtHttpUserAgent" type="text" is="emby-input" label="User-Agent (optional)" />
                         <div class="fieldDescription">
@@ -639,6 +642,10 @@
                         <div class="inputContainer">
                             <input class="txtDispatcharrPass" type="password" is="emby-input"
                                    label="Dispatcharr Password" />
+                        </div>
+                        <div class="fieldDescription" style="margin-top:-0.25em; margin-bottom:0.75em;">
+                            These are your <strong>Dispatcharr web UI login credentials</strong> — the account you use to sign in to the Dispatcharr admin interface.
+                            They are not the same as the Xtream API username/password you may have set in the <em>Xtream Connection</em> section above.
                         </div>
                         <button class="btnTestDispatcharr raised button-secondary" is="emby-button" type="button">
                             <span>Test Dispatcharr Connection</span>
