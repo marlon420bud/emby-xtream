@@ -728,6 +728,11 @@ namespace Emby.Xtream.Plugin.Service
                     Logger.Warn("DetachListingProviders: failed to save config: {0}", ex.Message);
                     return 0;
                 }
+
+                // Clear wrongly-cached Gracenote artwork from channels that don't have a
+                // station ID. Emby downloads listing-provider artwork during auto-mapping;
+                // once we detach the providers that artwork is stale and misleading.
+                ClearWrongChannelArtwork();
             }
             else
             {
@@ -735,6 +740,140 @@ namespace Emby.Xtream.Plugin.Service
             }
 
             return updated;
+        }
+
+        /// <summary>
+        /// Deletes all cached images from Live TV channels that belong to the Xtream tuner
+        /// and do NOT have a Gracenote station ID. Called after a successful provider detach
+        /// so that wrongly auto-mapped Gracenote artwork is removed immediately.
+        /// Channels WITH a station ID keep their artwork — it is correct.
+        /// </summary>
+        private void ClearWrongChannelArtwork()
+        {
+            try
+            {
+                var libraryManager = _applicationHost.Resolve<ILibraryManager>();
+
+                // Resolve LiveTvChannel type at runtime to avoid a hard compile-time dependency
+                // on internal Emby types not exposed in the SDK.
+                Type liveTvChannelType = null;
+                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    try
+                    {
+                        liveTvChannelType = asm.GetType("MediaBrowser.Controller.LiveTv.LiveTvChannel");
+                        if (liveTvChannelType != null) break;
+                    }
+                    catch { }
+                }
+
+                if (liveTvChannelType == null)
+                {
+                    Logger.Warn("ClearWrongChannelArtwork: LiveTvChannel type not found");
+                    return;
+                }
+
+                var internalQueryType = AppDomain.CurrentDomain.GetAssemblies()
+                    .Select(a => { try { return a.GetType("MediaBrowser.Controller.Entities.InternalItemsQuery"); } catch { return null; } })
+                    .FirstOrDefault(t => t != null);
+
+                if (internalQueryType == null)
+                {
+                    Logger.Warn("ClearWrongChannelArtwork: InternalItemsQuery type not found");
+                    return;
+                }
+
+                var query = Activator.CreateInstance(internalQueryType);
+                var includeItemTypesProp = internalQueryType.GetProperty("IncludeItemTypes");
+                if (includeItemTypesProp != null)
+                    includeItemTypesProp.SetValue(query, new[] { "LiveTvChannel" });
+
+                var getItemListMethod = typeof(ILibraryManager).GetMethods()
+                    .FirstOrDefault(m => m.Name == "GetItemList"
+                        && m.GetParameters().Length == 1
+                        && m.GetParameters()[0].ParameterType == internalQueryType);
+
+                if (getItemListMethod == null)
+                {
+                    Logger.Warn("ClearWrongChannelArtwork: GetItemList method not found");
+                    return;
+                }
+
+                var items = getItemListMethod.Invoke(libraryManager, new[] { query }) as System.Collections.IEnumerable;
+                if (items == null)
+                {
+                    Logger.Info("ClearWrongChannelArtwork: GetItemList returned null");
+                    return;
+                }
+
+                var stationMap = _stationIdMap;
+                int cleared = 0;
+                int skipped = 0;
+
+                foreach (var item in items)
+                {
+                    try
+                    {
+                        // Only clear channels belonging to the Xtream tuner
+                        var serviceNameProp = item.GetType().GetProperty("ServiceName");
+                        var serviceName = serviceNameProp?.GetValue(item) as string;
+                        if (!string.Equals(serviceName, Name, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        // Keep artwork for channels that have a Gracenote station ID
+                        var tunerChannelIdProp = item.GetType().GetProperty("ExternalId")
+                            ?? item.GetType().GetProperty("ExternalServiceId");
+                        // Use channel number to look up stream ID via cached channels
+                        var numberProp = item.GetType().GetProperty("Number");
+                        var channelNumber = numberProp?.GetValue(item) as string;
+
+                        bool hasStationId = false;
+                        if (!string.IsNullOrEmpty(channelNumber) && _cachedChannels != null)
+                        {
+                            var cached = _cachedChannels.Find(c => c.Number == channelNumber);
+                            if (cached != null && !string.IsNullOrEmpty(cached.ListingsChannelId))
+                                hasStationId = true;
+                        }
+
+                        if (hasStationId)
+                        {
+                            skipped++;
+                            continue;
+                        }
+
+                        // Clear all images for this channel
+                        var imageInfosProp = item.GetType().GetProperty("ImageInfos");
+                        var imageInfos = imageInfosProp?.GetValue(item) as System.Array;
+                        if (imageInfos == null || imageInfos.Length == 0)
+                            continue;
+
+                        imageInfosProp.SetValue(item, Array.CreateInstance(imageInfos.GetType().GetElementType(), 0));
+
+                        // Use UpdateItem(item, parent, updateReason) — ItemUpdateType.ImageUpdate = 4
+                        var updateMethods = typeof(ILibraryManager).GetMethods()
+                            .Where(m => m.Name == "UpdateItem" && m.GetParameters().Length == 3)
+                            .ToArray();
+
+                        if (updateMethods.Length > 0)
+                        {
+                            updateMethods[0].Invoke(libraryManager, new object[] { item, null, 4 });
+                        }
+
+                        cleared++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Debug("ClearWrongChannelArtwork: error clearing item: {0}", ex.Message);
+                    }
+                }
+
+                Logger.Info("ClearWrongChannelArtwork: cleared artwork for {0} channels, kept {1} (have Gracenote IDs)",
+                    cleared, skipped);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn("ClearWrongChannelArtwork: {0}", ex.Message);
+            }
         }
 
         /// <summary>
