@@ -113,6 +113,16 @@ namespace Emby.Xtream.Plugin.Service
         private SyncProgress _seriesProgress = new SyncProgress();
         private SyncProgress _episodeProgress = new SyncProgress();
 
+        private static void ReportTaskProgress(SyncProgress syncProgress, IProgress<double> taskProgress)
+        {
+            if (taskProgress == null) return;
+            var total = Volatile.Read(ref syncProgress.Total);
+            if (total <= 0) return;
+            var completed = Volatile.Read(ref syncProgress.Completed);
+            var pct = Math.Min(100.0, (double)completed / total * 100.0);
+            taskProgress.Report(pct);
+        }
+
         public StrmSyncService(ILogger logger, HttpClient httpClient = null)
         {
             _logger = logger;
@@ -255,7 +265,7 @@ namespace Emby.Xtream.Plugin.Service
             return true;
         }
 
-        public async Task SyncMoviesAsync(PluginConfiguration config, CancellationToken cancellationToken, Action saveConfig = null)
+        public async Task SyncMoviesAsync(PluginConfiguration config, CancellationToken cancellationToken, Action saveConfig = null, IProgress<double> taskProgress = null)
         {
             ApplyUserAgentToSharedClient();
             CheckAndUpgradeNamingVersion(config, saveConfig);
@@ -402,6 +412,7 @@ namespace Emby.Xtream.Plugin.Service
                         {
                             Interlocked.Increment(ref _movieProgress.Skipped);
                             Interlocked.Increment(ref _movieProgress.Completed);
+                            ReportTaskProgress(_movieProgress, taskProgress);
                             return;
                         }
 
@@ -418,6 +429,7 @@ namespace Emby.Xtream.Plugin.Service
                             }
                             Interlocked.Increment(ref _movieProgress.Skipped);
                             Interlocked.Increment(ref _movieProgress.Completed);
+                            ReportTaskProgress(_movieProgress, taskProgress);
                             return;
                         }
 
@@ -513,6 +525,7 @@ namespace Emby.Xtream.Plugin.Service
                         }
 
                         Interlocked.Increment(ref _movieProgress.Completed);
+                        ReportTaskProgress(_movieProgress, taskProgress);
                     }
                     catch (Exception ex)
                     {
@@ -532,6 +545,7 @@ namespace Emby.Xtream.Plugin.Service
                         }
                         Interlocked.Increment(ref _movieProgress.Failed);
                         Interlocked.Increment(ref _movieProgress.Completed);
+                        ReportTaskProgress(_movieProgress, taskProgress);
                     }
                     finally
                     {
@@ -595,7 +609,7 @@ namespace Emby.Xtream.Plugin.Service
             }
         }
 
-        public async Task SyncSeriesAsync(PluginConfiguration config, CancellationToken cancellationToken, Action saveConfig = null)
+        public async Task SyncSeriesAsync(PluginConfiguration config, CancellationToken cancellationToken, Action saveConfig = null, IProgress<double> taskProgress = null)
         {
             ApplyUserAgentToSharedClient();
             CheckAndUpgradeNamingVersion(config, saveConfig);
@@ -700,6 +714,7 @@ namespace Emby.Xtream.Plugin.Service
                         {
                             Interlocked.Increment(ref _seriesProgress.Skipped);
                             Interlocked.Increment(ref _seriesProgress.Completed);
+                            ReportTaskProgress(_seriesProgress, taskProgress);
                             return;
                         }
 
@@ -725,12 +740,14 @@ namespace Emby.Xtream.Plugin.Service
                             }
                             Interlocked.Increment(ref _seriesProgress.Failed);
                             Interlocked.Increment(ref _seriesProgress.Completed);
+                            ReportTaskProgress(_seriesProgress, taskProgress);
                             return;
                         }
 
                         if (detail == null || detail.Episodes == null || detail.Episodes.Count == 0)
                         {
                             Interlocked.Increment(ref _seriesProgress.Completed);
+                            ReportTaskProgress(_seriesProgress, taskProgress);
                             return;
                         }
 
@@ -815,6 +832,7 @@ namespace Emby.Xtream.Plugin.Service
                                 }
                                 Interlocked.Increment(ref _seriesProgress.Skipped);
                                 Interlocked.Increment(ref _seriesProgress.Completed);
+                                ReportTaskProgress(_seriesProgress, taskProgress);
                                 Interlocked.Add(ref _episodeProgress.Total, existingStrms.Length);
                                 Interlocked.Add(ref _episodeProgress.Skipped, existingStrms.Length);
                                 // Carry forward the stored hash (unchanged series)
@@ -850,6 +868,7 @@ namespace Emby.Xtream.Plugin.Service
                                 }
                                 Interlocked.Increment(ref _seriesProgress.Skipped);
                                 Interlocked.Increment(ref _seriesProgress.Completed);
+                                ReportTaskProgress(_seriesProgress, taskProgress);
                                 Interlocked.Add(ref _episodeProgress.Total, existingStrms.Length);
                                 Interlocked.Add(ref _episodeProgress.Skipped, existingStrms.Length);
                                 Interlocked.Increment(ref hashSkippedCount);
@@ -927,6 +946,7 @@ namespace Emby.Xtream.Plugin.Service
                             }
                         }
                         Interlocked.Increment(ref _seriesProgress.Completed);
+                        ReportTaskProgress(_seriesProgress, taskProgress);
                     }
                     catch (Exception ex)
                     {
@@ -944,6 +964,7 @@ namespace Emby.Xtream.Plugin.Service
                         }
                         Interlocked.Increment(ref _seriesProgress.Failed);
                         Interlocked.Increment(ref _seriesProgress.Completed);
+                        ReportTaskProgress(_seriesProgress, taskProgress);
                     }
                     finally
                     {

@@ -47,7 +47,8 @@ namespace Emby.Xtream.Plugin.Service
             await svc.SyncSeriesAsync(
                 config,
                 cancellationToken,
-                () => Plugin.Instance.SaveConfiguration()).ConfigureAwait(false);
+                () => Plugin.Instance.SaveConfiguration(),
+                progress).ConfigureAwait(false);
             progress.Report(100);
         }
     }
