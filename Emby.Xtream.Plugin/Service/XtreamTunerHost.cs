@@ -47,6 +47,7 @@ namespace Emby.Xtream.Plugin.Service
         private volatile HashSet<int> _allowedStreamIds;
         private List<ChannelInfo> _cachedChannels;
         private DateTime _cacheTime = DateTime.MinValue;
+        private DateTime _lastDetachCheck = DateTime.MinValue;
 
         public int CachedChannelCount => _cachedChannels?.Count ?? 0;
 
@@ -90,6 +91,17 @@ namespace Emby.Xtream.Plugin.Service
             DateTimeOffset startDateUtc, DateTimeOffset endDateUtc,
             CancellationToken cancellationToken)
         {
+            var config = Plugin.Instance.Configuration;
+            if (config.DeferEpgToGuideData && DateTime.UtcNow - _lastDetachCheck > TimeSpan.FromSeconds(60))
+            {
+                _lastDetachCheck = DateTime.UtcNow;
+                _ = Task.Run(() =>
+                {
+                    try { DetachListingProviders(); }
+                    catch (Exception ex) { Logger.Warn("Auto detach (EPG fallback) failed: {0}", ex.Message); }
+                });
+            }
+
             int streamId;
             if (_tunerChannelIdToStreamId.TryGetValue(tunerChannelId, out streamId))
             {
@@ -756,10 +768,11 @@ namespace Emby.Xtream.Plugin.Service
         }
 
         /// <summary>
-        /// Deletes all cached images from Live TV channels that belong to the Xtream tuner
-        /// and do NOT have a Gracenote station ID. Called immediately after detach and again
-        /// on a 30s delay to catch artwork Emby downloads during later refresh phases.
-        /// Channels WITH a station ID keep their artwork — it is correct.
+        /// Deletes all cached images from Live TV channels that belong to the Xtream tuner.
+        /// Clears ALL Xtream channels (including Gracenote-matched ones) because Emby's
+        /// auto-mapper may have assigned artwork from the wrong station during the brief
+        /// window before the plugin detached. Correct artwork returns on the next guide
+        /// refresh from the proper source.
         /// </summary>
         private void ClearWrongChannelArtwork()
         {
@@ -830,19 +843,13 @@ namespace Emby.Xtream.Plugin.Service
                 }
 
                 var xtreamChannelNumbers = new HashSet<string>(StringComparer.Ordinal);
-                var gracenoteChannelNumbers = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var ch in cachedChannels)
                 {
                     if (!string.IsNullOrEmpty(ch.Number))
-                    {
                         xtreamChannelNumbers.Add(ch.Number);
-                        if (!string.IsNullOrEmpty(ch.ListingsChannelId))
-                            gracenoteChannelNumbers.Add(ch.Number);
-                    }
                 }
 
                 int cleared = 0;
-                int skipped = 0;
                 int noImages = 0;
                 int totalLibraryChannels = 0;
 
@@ -857,12 +864,6 @@ namespace Emby.Xtream.Plugin.Service
 
                         if (string.IsNullOrEmpty(channelNumber) || !xtreamChannelNumbers.Contains(channelNumber))
                             continue;
-
-                        if (gracenoteChannelNumbers.Contains(channelNumber))
-                        {
-                            skipped++;
-                            continue;
-                        }
 
                         var imageInfosProp = item.GetType().GetProperty("ImageInfos");
                         var imageInfos = imageInfosProp?.GetValue(item) as System.Array;
@@ -896,8 +897,8 @@ namespace Emby.Xtream.Plugin.Service
                     }
                 }
 
-                Logger.Info("ClearWrongChannelArtwork: {0} library channels, {1} matched Xtream, cleared {2}, kept {3} (Gracenote), {4} already clean",
-                    totalLibraryChannels, cleared + skipped + noImages, cleared, skipped, noImages);
+                Logger.Info("ClearWrongChannelArtwork: {0} library channels, {1} matched Xtream, cleared {2}, {3} already clean",
+                    totalLibraryChannels, cleared + noImages, cleared, noImages);
             }
             catch (Exception ex)
             {
