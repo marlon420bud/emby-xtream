@@ -1285,6 +1285,14 @@ namespace Emby.Xtream.Plugin.Service
                 // Codec must be non-null: Emby's RecordingRequiresEncoding accesses it
                 // directly and throws NullReferenceException when it is null.  H.264/AAC
                 // are the most common IPTV codecs and serve as safe fallbacks.
+                //
+                // BitRate must also be set: without it, Emby Web negotiates the transcode
+                // target at the user's max bandwidth setting (often ~200 Mbps for "Auto"),
+                // which exceeds Intel QuickSync's ~39 Mbit/s cap and forces a fallback to
+                // software x265 — too slow for live playback.  Probing live MPEG-TS rarely
+                // yields a usable bitrate (ffmpeg reports N/A from a 500ms sample) so we
+                // hard-code a sensible IPTV default of 8 Mbps that comfortably covers
+                // 720p/1080p H.264 and stays well under any hardware encoder limit.
                 mediaSource.MediaStreams = new List<MediaStream>
                 {
                     new MediaStream
@@ -1295,6 +1303,7 @@ namespace Emby.Xtream.Plugin.Service
                         IsInterlaced = false,
                         PixelFormat = "yuv420p",
                         DisplayTitle = "H264",
+                        BitRate = 8_000_000,
                     },
                     new MediaStream
                     {
@@ -1302,9 +1311,11 @@ namespace Emby.Xtream.Plugin.Service
                         Index = 1,
                         Codec = "aac",
                         DisplayTitle = "AAC",
+                        BitRate = 192_000,
                     },
                 };
                 mediaSource.DefaultAudioStreamIndex = 1;
+                mediaSource.Bitrate = 8_192_000;
                 Logger.Debug("Stream {0}: no stats available, will probe", streamId);
             }
 
