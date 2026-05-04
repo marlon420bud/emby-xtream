@@ -556,6 +556,10 @@ namespace Emby.Xtream.Plugin.Service
             sw.Restart();
 
             var config = Plugin.Instance.Configuration;
+            
+
+            var sessionUserAgent = BuildSessionUserAgent();
+
             var (streamUrl, isDispatcharr) = BuildStreamUrl(config, streamId);
             Logger.Info("[stream-timing] ch={0} BuildUrl={1}ms isDispatcharr={2}", tunerChannel?.Name, sw.ElapsedMilliseconds, isDispatcharr);
             sw.Restart();
@@ -567,7 +571,7 @@ namespace Emby.Xtream.Plugin.Service
 
             _streamStats.TryGetValue(streamId, out var stats);
 
-            var mediaSource = CreateMediaSourceInfo(streamId, streamUrl, stats, isDispatcharr, config.ForceAudioTranscode, config.HttpUserAgent, config.FallbackTranscodeBitrateMbps);
+            var mediaSource = CreateMediaSourceInfo(streamId, streamUrl, stats, isDispatcharr, config.ForceAudioTranscode, sessionUserAgent, config.FallbackTranscodeBitrateMbps);
             Logger.Info("[stream-timing] ch={0} CreateMediaSource={1}ms hasStats={2}", tunerChannel?.Name, sw.ElapsedMilliseconds, stats != null);
 
             return new List<MediaSourceInfo> { mediaSource };
@@ -591,6 +595,9 @@ namespace Emby.Xtream.Plugin.Service
             sw.Restart();
 
             var config = Plugin.Instance.Configuration;
+            
+            var sessionUserAgent = BuildSessionUserAgent();
+
             var (streamUrl, isDispatcharr) = BuildStreamUrl(config, streamId);
             if (streamUrl == null)
             {
@@ -601,7 +608,7 @@ namespace Emby.Xtream.Plugin.Service
             Logger.Info("[stream-timing] ch={0} BuildUrl={1}ms isDispatcharr={2}", tunerChannel?.Name, sw.ElapsedMilliseconds, isDispatcharr);
             sw.Restart();
 
-            var mediaSource = CreateMediaSourceInfo(streamId, streamUrl, stats, isDispatcharr, config.ForceAudioTranscode, config.HttpUserAgent, config.FallbackTranscodeBitrateMbps);
+            var mediaSource = CreateMediaSourceInfo(streamId, streamUrl, stats, isDispatcharr, config.ForceAudioTranscode, sessionUserAgent, config.FallbackTranscodeBitrateMbps);
             Logger.Info("[stream-timing] ch={0} CreateMediaSource={1}ms hasStats={2}", tunerChannel?.Name, sw.ElapsedMilliseconds, stats != null);
 
             var httpClient = Plugin.CreateHttpClient();
@@ -1366,5 +1373,14 @@ namespace Emby.Xtream.Plugin.Service
             if (upper == "MPEG2VIDEO") return "mpeg2video";
             return dispatcharrCodec.ToLowerInvariant();
         }
+
+        private static string BuildSessionUserAgent()
+        {
+            return
+                "Emby-Xtream/" + Plugin.Instance.Version + " " +
+                "Session/" + Guid.NewGuid().ToString("N");
+        }
+
+
     }
 }
