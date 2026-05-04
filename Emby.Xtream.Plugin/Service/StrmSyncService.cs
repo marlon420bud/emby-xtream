@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Emby.Xtream.Plugin.Client.Models;
 using MediaBrowser.Model.Logging;
 using STJ = System.Text.Json;
+using System.Diagnostics;
 
 namespace Emby.Xtream.Plugin.Service
 {
@@ -71,13 +72,39 @@ namespace Emby.Xtream.Plugin.Service
         public DateTime FailedAt { get; set; } = DateTime.UtcNow;
     }
 
-    public class StrmSyncService
+public class StrmSyncService
+{
+    // === GLOBAL RATE LIMITER (20 requests per second) ===
+    private static readonly SemaphoreSlim _rateLock = new(1, 1);
+    private static readonly TimeSpan _minInterval = TimeSpan.FromMilliseconds(50);
+    private static readonly Stopwatch _rateTimer = Stopwatch.StartNew();
+
+    private static async Task ThrottleAsync()
     {
-        private static readonly STJ.JsonSerializerOptions JsonOptions = new STJ.JsonSerializerOptions
+        await _rateLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var elapsed = _rateTimer.Elapsed;
+            if (elapsed < _minInterval)
+            {
+                await Task.Delay(_minInterval - elapsed).ConfigureAwait(false);
+            }
+
+            _rateTimer.Restart();
+        }
+        finally
+        {
+            _rateLock.Release();
+        }
+    }
+
+    private static readonly STJ.JsonSerializerOptions JsonOptions =
+        new STJ.JsonSerializerOptions
         {
             NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
             PropertyNameCaseInsensitive = true,
         };
+
 
         private static readonly Regex InvalidFileCharsRegex = new Regex(
             @"[<>:""/\\|?*\x00-\x1F]",
@@ -1443,6 +1470,7 @@ namespace Emby.Xtream.Plugin.Service
                 "{0}/player_api.php?username={1}&password={2}&action={3}",
                 config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty), action);
 
+            await ThrottleAsync();
             var json = await _httpClient.GetStringAsync(url).ConfigureAwait(false);
             return STJ.JsonSerializer.Deserialize<List<Category>>(json, JsonOptions)
                 ?? new List<Category>();
@@ -1485,7 +1513,7 @@ namespace Emby.Xtream.Plugin.Service
                     CultureInfo.InvariantCulture,
                     "{0}/player_api.php?username={1}&password={2}&action=get_vod_streams",
                     config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty));
-
+                await ThrottleAsync();
                 var json = await _httpClient.GetStringAsync(url).ConfigureAwait(false);
                 allStreams = STJ.JsonSerializer.Deserialize<List<VodStreamInfo>>(json, JsonOptions)
                     ?? new List<VodStreamInfo>();
@@ -1502,7 +1530,7 @@ namespace Emby.Xtream.Plugin.Service
                             CultureInfo.InvariantCulture,
                             "{0}/player_api.php?username={1}&password={2}&action=get_vod_streams&category_id={3}",
                             config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty), catId);
-
+                        await ThrottleAsync();
                         var json = await _httpClient.GetStringAsync(url).ConfigureAwait(false);
                         var streams = STJ.JsonSerializer.Deserialize<List<VodStreamInfo>>(json, JsonOptions)
                             ?? new List<VodStreamInfo>();
@@ -1553,7 +1581,7 @@ namespace Emby.Xtream.Plugin.Service
                     CultureInfo.InvariantCulture,
                     "{0}/player_api.php?username={1}&password={2}&action=get_series",
                     config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty));
-
+                await ThrottleAsync();
                 var json = await _httpClient.GetStringAsync(url).ConfigureAwait(false);
                 allSeries = STJ.JsonSerializer.Deserialize<List<SeriesInfo>>(json, JsonOptions)
                     ?? new List<SeriesInfo>();
@@ -1570,7 +1598,7 @@ namespace Emby.Xtream.Plugin.Service
                             CultureInfo.InvariantCulture,
                             "{0}/player_api.php?username={1}&password={2}&action=get_series&category_id={3}",
                             config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty), catId);
-
+                        await ThrottleAsync();
                         var json = await _httpClient.GetStringAsync(url).ConfigureAwait(false);
                         var series = STJ.JsonSerializer.Deserialize<List<SeriesInfo>>(json, JsonOptions)
                             ?? new List<SeriesInfo>();
@@ -1614,7 +1642,7 @@ namespace Emby.Xtream.Plugin.Service
                 CultureInfo.InvariantCulture,
                 "{0}/player_api.php?username={1}&password={2}&action=get_series_info&series_id={3}",
                 config.BaseUrl, Uri.EscapeDataString(config.Username ?? string.Empty), Uri.EscapeDataString(config.Password ?? string.Empty), seriesId);
-
+            await ThrottleAsync();
             var json = await _httpClient.GetStringAsync(url).ConfigureAwait(false);
             return STJ.JsonSerializer.Deserialize<SeriesDetailInfo>(json, JsonOptions);
         }
