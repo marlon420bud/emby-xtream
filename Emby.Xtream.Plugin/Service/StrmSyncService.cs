@@ -75,8 +75,8 @@ namespace Emby.Xtream.Plugin.Service
 public class StrmSyncService
 {
     // === GLOBAL RATE LIMITER (20 requests per second) ===
-    private static readonly SemaphoreSlim _rateLock = new(1, 1);
-    private static readonly TimeSpan _minInterval = TimeSpan.FromMilliseconds(100);
+private static readonly SemaphoreSlim _rateLock = new SemaphoreSlim(1, 1);
+private static readonly TimeSpan _minInterval = TimeSpan.FromMilliseconds(100);
     private static readonly Stopwatch _rateTimer = Stopwatch.StartNew();
 
     private static async Task ThrottleAsync()
